@@ -28,7 +28,7 @@ typedef struct{
     float pitch_angle;
     float yaw_angle;
     float voltage;
-    float bottom_tof_range;
+    uint16_t bottom_tof_range;
 }sensor_value_t;
 
 typedef struct{

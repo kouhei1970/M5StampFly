@@ -39,16 +39,26 @@
 #include "button.hpp"
 #include "buzzer.h"
 #include "stampfly.hpp"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+
+void IRAM_ATTR onTimer(void);
+void init_copter(void);
+void myclock(void);
+void loop_400Hz(void *pvParameters);
 
 // 割り込み関数
 // Intrupt function
 hw_timer_t* timer = NULL;
-void IRAM_ATTR onTimer() {
+void IRAM_ATTR onTimer(void) {
     StampFly.flag.loop = 1;
+    //loop_400Hz();
 }
 
 // Initialize StampFly
 void init_copter(void) {
+    //disableCore1WDT();
     // Initialize Mode
     StampFly.flag.mode = INIT_MODE;
     StampFly.flag.loop = 0;
@@ -58,10 +68,15 @@ void init_copter(void) {
     USBSerial.begin(115200);
     delay(1500);
     USBSerial.printf("Start StampFly! Skeleton\r\n");
-
     motor_init();
     sensor_init();
     rc_init();
+
+    // init button G0
+    init_button();
+    setup_pwm_buzzer();
+    USBSerial.printf("Finish StampFly init!\r\n");
+    start_tone();
 
     // 割り込み設定
     // Initialize intrupt
@@ -70,32 +85,33 @@ void init_copter(void) {
     timerAlarmWrite(timer, 2500, true);
     timerAlarmEnable(timer);
 
-    // init button G0
-    init_button();
-    setup_pwm_buzzer();
-    USBSerial.printf("Finish StampFly init!\r\n");
-    start_tone();
 }
 
-// Main loop
-void loop_400Hz(void) {
+//時計
+void myclock(void) {
     uint32_t now_time;
-
-    // 割り込みにより400Hzで以降のコードが実行
-    while (StampFly.flag.loop == 0);
-    StampFly.flag.loop = 0;
-
 
     now_time = micros();
     StampFly.times.old_elapsed_time = StampFly.times.elapsed_time;
     StampFly.times.elapsed_time = 1e-6 * (now_time - StampFly.times.start_time);
     StampFly.times.interval_time = StampFly.times.elapsed_time - StampFly.times.old_elapsed_time;
+    #if 1
     USBSerial.printf("%9.4f %9.4f %04d\n\r", 
         StampFly.times.elapsed_time, 
         StampFly.times.interval_time,
-        StampFly.counter.offset);
+        StampFly.sensor.bottom_tof_range);
+    #endif
+}
 
-    
+
+// Main loop
+void loop_400Hz(void) {
+    // 割り込みにより400Hzで以降のコードが実行
+    while (StampFly.flag.loop == 0);
+    StampFly.flag.loop = 0;
+
+    //clock
+    myclock();
     // Read Sensor Value
     sensor_read(&StampFly.sensor);
     // LED Drive
@@ -122,11 +138,12 @@ void loop_400Hz(void) {
         return;
     } else if (StampFly.flag.mode == PARKING_MODE) {
         //ここに自分のコードを書く
-        StampFly.counter.counter++;
+        
     }
 
     //// Telemetry
-    //telemetry();
+    telemetry();
     StampFly.flag.oldmode = StampFly.flag.mode;  // Memory now mode
     // End of Loop_400Hz function
+    
 }

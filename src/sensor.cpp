@@ -105,10 +105,8 @@ void sensor_calc_offset_avarage(void) {
 void sensor_read(sensor_value_t* data) {
     float acc_x, acc_y, acc_z, roll_rate, pitch_rate, yaw_rate;
     float roll_angle, pitch_angle, yaw_angle;
-    float bottom_tof_range;
+    uint16_t bottom_tof_range;
     float voltage;
-    uint8_t dcnt=0;
-    const uint8_t interval = 400 / 30 + 1;
 
     // 以下では航空工学の座標軸の取り方に従って
     // X軸：前後（前が正）左肩上がりが回転の正
@@ -140,26 +138,14 @@ void sensor_read(sensor_value_t* data) {
         ahrs.updateIMU( roll_rate  * (float)RAD_TO_DEG, 
                         pitch_rate * (float)RAD_TO_DEG,
                         yaw_rate   * (float)RAD_TO_DEG, 
-                        acc_x, 
-                        acc_y,
-                        acc_z);
+                        -acc_x, 
+                        -acc_y,
+                        -acc_z);
 
         roll_angle  = ahrs.getRoll()  * (float)DEG_TO_RAD;
         pitch_angle = ahrs.getPitch() * (float)DEG_TO_RAD;
         yaw_angle   = ahrs.getYaw()   * (float)DEG_TO_RAD;
-        #if 0
-        if (dcnt > interval) {
-            if (ToF_bottom_data_ready_flag) {
-                dcnt = 0u;
-                ToF_bottom_data_ready_flag = 0;
-                // 距離の値の更新
-                bottom_tof_range = tof_bottom_get_range();
-            }
-        } else
-            dcnt++;
-        #endif
     }
-
     // Battery voltage check
     voltage   = ina3221.getVoltage(INA3221_CH2);
 
@@ -173,8 +159,19 @@ void sensor_read(sensor_value_t* data) {
     data->roll_angel = roll_angle;
     data->pitch_angle = pitch_angle;
     data->yaw_angle = yaw_angle;
-    data->bottom_tof_range = bottom_tof_range;
     data->voltage = voltage;
 
     return;
+}
+
+void tof_read(sensor_value_t* data) {
+    uint16_t range; 
+    if (ToF_bottom_data_ready_flag) {
+        //dcnt = 0u;
+        ToF_bottom_data_ready_flag = 0;
+        // 距離の値の更新
+        range = tof_bottom_get_range();
+        //USBSerial.printf("%04d\n\r", bottom_tof_range);
+    }
+    data->bottom_tof_range = range;   
 }

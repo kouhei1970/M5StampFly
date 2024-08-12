@@ -26,6 +26,7 @@
 #include <FastLED.h>
 #include "stampfly.hpp"
 #include "main_loop.hpp"
+#include "sensor.hpp"
 
 void setup() {
     init_copter();

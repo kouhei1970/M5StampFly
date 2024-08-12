@@ -46,12 +46,12 @@ void led_init(void) {
     onboard_led1(WHITE, 1);
     onboard_led2(WHITE, 1);
     led_show();
+    led_show();
+    led_show();
 }
 
 void led_show(void) {
-    uint8_t bright = 16;
-    //FastLED.show(bright);
-    //FastLED.show(bright);
+    uint8_t bright = 64;
     FastLED.show(bright);
 }
 
