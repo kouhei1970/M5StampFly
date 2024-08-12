@@ -106,16 +106,14 @@ void imu_test(void) {
         old = now;
         now = micros();
         ret = bmi2_get_sensor_data(&imu_data, pBmi270);
-        // USBSerial.printf("%d\n\r", ret);
         acc_x  = lsb_to_mps2(imu_data.acc.x, 8.0, 16);
         acc_y  = lsb_to_mps2(imu_data.acc.y, 8.0, 16);
         acc_z  = lsb_to_mps2(imu_data.acc.z, 8.0, 16);
-        gyro_x = lsb_to_rps(imu_data.gyr.x, DPS10002RAD, 16);
-        gyro_y = lsb_to_rps(imu_data.gyr.y, DPS10002RAD, 16);
-        gyro_z = lsb_to_rps(imu_data.gyr.z, DPS10002RAD, 16);
-#if 1
+        gyro_x = lsb_to_rps(imu_data.gyr.x, DPS20002RAD, 16);
+        gyro_y = lsb_to_rps(imu_data.gyr.y, DPS20002RAD, 16);
+        gyro_z = lsb_to_rps(imu_data.gyr.z, DPS20002RAD, 16);
+
         USBSerial.printf("%8.4f %7.5f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %d\n\r", (float)(now - st) * 1.0e-6,
                          (float)(now - old) * 1.0e-6, acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, ret);
-#endif
     }
 }

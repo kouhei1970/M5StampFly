@@ -2,6 +2,7 @@
  * MIT License
  *
  * Copyright (c) 2024 Kouhei Ito
+ * Copyright (c) 2024 M5Stack
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,16 +23,40 @@
  * SOFTWARE.
  */
 
+#include "motor.hpp"
 #include <Arduino.h>
-#include <FastLED.h>
-#include "stampfly.hpp"
-#include "main_loop.hpp"
 
-void setup() {
-    init_copter();
-    delay(100);
+// 制御周期
+// Control period
+float Control_period = 0.0025f;  // 400Hz
+
+void motor_set_duty_fr(float duty) {
+    ledcWrite(CH_FRONT_RIGHT, (uint32_t)(255 * duty));
+}
+void motor_set_duty_fl(float duty) {
+    ledcWrite(CH_FRONT_LEFT, (uint32_t)(255 * duty));
+}
+void motor_set_duty_rr(float duty) {
+    ledcWrite(CH_REAR_RIGHT, (uint32_t)(255 * duty));
+}
+void motor_set_duty_rl(float duty) {
+    ledcWrite(CH_REAR_LEFT, (uint32_t)(255 * duty));
 }
 
-void loop() {
-    loop_400Hz();
+void motor_init(void) {
+    ledcSetup(CH_FRONT_LEFT,  PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(CH_FRONT_RIGHT, PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(CH_REAR_LEFT,   PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(CH_REAR_RIGHT,  PWM_FREQ, PWM_RESOLUTION);
+    ledcAttachPin(PIN_FRONT_LEFT,  CH_FRONT_LEFT);
+    ledcAttachPin(PIN_FRONT_RIGHT, CH_FRONT_RIGHT);
+    ledcAttachPin(PIN_REAR_LEFT,   CH_REAR_LEFT);
+    ledcAttachPin(PIN_REAR_RIGHT,  CH_REAR_RIGHT);
+}
+
+void motor_stop(void) {
+    motor_set_duty_fr(0.0);
+    motor_set_duty_fl(0.0);
+    motor_set_duty_rr(0.0);
+    motor_set_duty_rl(0.0);
 }

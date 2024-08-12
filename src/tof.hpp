@@ -36,6 +36,8 @@
 #define XSHUT_FRONT  9
 #define USER_A       0
 
+extern volatile uint8_t ToF_bottom_data_ready_flag;
+
 void tof_init(void);
 int16_t tof_range_get(VL53LX_DEV dev);
 void tof_test_ranging(VL53LX_DEV dev);

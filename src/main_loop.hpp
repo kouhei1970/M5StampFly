@@ -2,6 +2,7 @@
  * MIT License
  *
  * Copyright (c) 2024 Kouhei Ito
+ * Copyright (c) 2024 M5Stack
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,16 +23,18 @@
  * SOFTWARE.
  */
 
-#include <Arduino.h>
+#ifndef CONTROL_HPP
+#define CONTROL_HPP
+
+// #include <Arduino.h>
+#include <stdint.h>
+#include <math.h>
 #include <FastLED.h>
+#include <vl53lx_platform.h>
 #include "stampfly.hpp"
-#include "main_loop.hpp"
 
-void setup() {
-    init_copter();
-    delay(100);
-}
+// グローバル関数の宣言
+void init_copter(void);
+void loop_400Hz(void);
 
-void loop() {
-    loop_400Hz();
-}
+#endif

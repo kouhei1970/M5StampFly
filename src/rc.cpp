@@ -27,7 +27,7 @@
 #include <WiFi.h>
 #include <esp_now.h>
 #include <esp_wifi.h>
-#include "flight_control.hpp"
+#include "main_loop.hpp"
 
 // esp_now_peer_info_t slave;
 
@@ -123,7 +123,7 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *recv_data, int data_len)
     Stick[CONTROLMODE]    = recv_data[21];//Mode:rate or angle control
     Stick[ALTCONTROLMODE] = recv_data[22];//高度制御
 
-    ahrs_reset_flag = recv_data[23];
+    uint8_t ahrs_reset_flag = recv_data[23];
 
     Stick[LOG] = 0.0;
     // if (check_sum!=recv_data[23])USBSerial.printf("checksum=%03d recv_sum=%03d\n\r", check_sum, recv_data[23]);
