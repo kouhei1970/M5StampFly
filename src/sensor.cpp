@@ -147,7 +147,7 @@ void sensor_read(sensor_value_t* data) {
         roll_angle  = ahrs.getRoll()  * (float)DEG_TO_RAD;
         pitch_angle = ahrs.getPitch() * (float)DEG_TO_RAD;
         yaw_angle   = ahrs.getYaw()   * (float)DEG_TO_RAD;
-
+        #if 0
         if (dcnt > interval) {
             if (ToF_bottom_data_ready_flag) {
                 dcnt = 0u;
@@ -157,6 +157,7 @@ void sensor_read(sensor_value_t* data) {
             }
         } else
             dcnt++;
+        #endif
     }
 
     // Battery voltage check

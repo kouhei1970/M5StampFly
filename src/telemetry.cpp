@@ -32,7 +32,7 @@
 
 uint8_t Telem_mode     = 0;
 uint8_t Telem_cnt      = 0;
-const uint8_t MAXINDEX = 14*4;
+const uint8_t MAXINDEX = 11*4+2;
 const uint8_t MININDEX = 30;
 
 void telemetry_sequence(void);
@@ -49,15 +49,15 @@ void data_set_uint16(uint8_t* datalist, uint16_t value, uint8_t* index);
 void data_set_uint8(uint8_t* datalist, uint8_t value, uint8_t* index);
 
 void telemetry(void) {
-    uint8_t senddata[MAXINDEX];
-
+    //uint8_t senddata[MAXINDEX];
+    
     if (Telem_mode == 0) {
         // Send header data
         Telem_mode = 1;
-        make_telemetry_header_data(senddata);
+        //make_telemetry_header_data(senddata);
 
         // Send !
-        telemetry_send(senddata, sizeof(senddata));
+        //telemetry_send(senddata, sizeof(senddata));
     } else if (StampFly.flag.mode > AVERAGE_MODE) {
         const uint8_t N = 10;
         // N回に一度送信
@@ -75,11 +75,14 @@ void telemetry_sequence(void) {
         case 1:
             make_telemetry_data(senddata);
             // Send !
-            if (telemetry_send(senddata, sizeof(senddata)) == 1)
-                esp_led(0x110000, 1);  // Telemetory Reciver OFF
-            else
-                esp_led(0x001100, 1);  // Telemetory Reciver ON
-
+            if (telemetry_send(&peerInfo[TELEM], senddata, sizeof(senddata)) == 1){
+                //esp_led(0x110000, 1);  // Telemetory Reciver OFF
+                //USBSerial.printf("NG Mode=%d\n\r", StampFly.flag.mode);
+            }
+            else{
+                //esp_led(0x001100, 1);  // Telemetory Reciver ON
+                //USBSerial.printf("OK Mode=%d\n\r", StampFly.flag.mode);
+            }
             // Telem_mode = 2;
             break;
     }
@@ -132,17 +135,17 @@ void make_telemetry_data(uint8_t* senddata) {
     senddata[0] = 88;
     senddata[1] = 88;
     index       = 2;
-    data_set(senddata, StampFly.times.elapsed_time, &index);              // 1 Time
-    data_set(senddata, StampFly.times.interval_time, &index);             // 2 Interval Time
-    data_set(senddata, StampFly.sensor.roll_angel * 180 / PI, &index);    // 3 Roll_angle
-    data_set(senddata, StampFly.sensor.pitch_angle * 180 / PI, &index);   // 4 Pitch_angle
-    data_set(senddata, StampFly.sensor.yaw_angle * 180 / PI, &index);     // 5 Yaw_angle
-    data_set(senddata, StampFly.sensor.roll_rate * 180 / PI, &index);     // 6 Roll_rate
-    data_set(senddata, StampFly.sensor.pitch_rate * 180 / PI, &index);    // 7 Pitch_rate
-    data_set(senddata, StampFly.sensor.yaw_rate * 180 / PI, &index);      // 8 Pitch_rate
-    data_set(senddata, StampFly.sensor.accx * 180 / PI, &index);          // 9 accx
-    data_set(senddata, StampFly.sensor.accy * 180 / PI, &index);          // 10 accy
-    data_set(senddata, StampFly.sensor.accz * 180 / PI, &index);          // 11 accz
+    data_set(senddata, StampFly.times.elapsed_time, &index);            // 1 Time
+    data_set(senddata, StampFly.times.interval_time, &index);           // 2 Interval Time
+    data_set(senddata, StampFly.sensor.roll_angel * 180 / PI, &index);  // 3 Roll_angle
+    data_set(senddata, StampFly.sensor.pitch_angle * 180 / PI, &index); // 4 Pitch_angle
+    data_set(senddata, StampFly.sensor.yaw_angle * 180 / PI, &index);   // 5 Yaw_angle
+    data_set(senddata, StampFly.sensor.roll_rate * 180 / PI, &index);   // 6 Roll_rate
+    data_set(senddata, StampFly.sensor.pitch_rate * 180 / PI, &index);  // 7 Pitch_rate
+    data_set(senddata, StampFly.sensor.yaw_rate * 180 / PI, &index);    // 8 Pitch_rate
+    data_set(senddata, StampFly.sensor.accx, &index);                   // 9 accx
+    data_set(senddata, StampFly.sensor.accy, &index);                   // 10 accy
+    data_set(senddata, StampFly.sensor.accz, &index);                   // 11 accz
 }
 
 void data_set(uint8_t* datalist, float value, uint8_t* index) {

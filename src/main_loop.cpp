@@ -51,6 +51,7 @@ void IRAM_ATTR onTimer() {
 void init_copter(void) {
     // Initialize Mode
     StampFly.flag.mode = INIT_MODE;
+    StampFly.flag.loop = 0;
     // Initialaze LED function
     led_init();
     // Initialize Serial communication
@@ -68,6 +69,7 @@ void init_copter(void) {
     timerAttachInterrupt(timer, &onTimer, true);
     timerAlarmWrite(timer, 2500, true);
     timerAlarmEnable(timer);
+
     // init button G0
     init_button();
     setup_pwm_buzzer();
@@ -83,10 +85,16 @@ void loop_400Hz(void) {
     while (StampFly.flag.loop == 0);
     StampFly.flag.loop = 0;
 
+
     now_time = micros();
     StampFly.times.old_elapsed_time = StampFly.times.elapsed_time;
     StampFly.times.elapsed_time = 1e-6 * (now_time - StampFly.times.start_time);
-    StampFly.times.interval_time = StampFly.times.interval_time - StampFly.times.old_elapsed_time;
+    StampFly.times.interval_time = StampFly.times.elapsed_time - StampFly.times.old_elapsed_time;
+    USBSerial.printf("%9.4f %9.4f %04d\n\r", 
+        StampFly.times.elapsed_time, 
+        StampFly.times.interval_time,
+        StampFly.counter.offset);
+
     
     // Read Sensor Value
     sensor_read(&StampFly.sensor);
@@ -110,14 +118,15 @@ void loop_400Hz(void) {
         // Mode change
         StampFly.flag.mode   = PARKING_MODE;
         StampFly.times.start_time = micros();
+        StampFly.times.old_elapsed_time = 0.0f;
         return;
     } else if (StampFly.flag.mode == PARKING_MODE) {
         //ここに自分のコードを書く
-        StampFly.counter.loop++;
+        StampFly.counter.counter++;
     }
 
     //// Telemetry
-    telemetry();
+    //telemetry();
     StampFly.flag.oldmode = StampFly.flag.mode;  // Memory now mode
     // End of Loop_400Hz function
 }

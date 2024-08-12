@@ -32,21 +32,22 @@ typedef struct{
 }sensor_value_t;
 
 typedef struct{
-    uint8_t mode=0;
-    uint8_t oldmode=0;
-    uint8_t loop=0;
+    volatile uint8_t mode=0;
+    volatile uint8_t oldmode=0;
+    volatile uint8_t loop=0;
 }flag_t;
 
 typedef struct{
     uint16_t loop=0;
     uint16_t offset=0;
+    uint32_t counter=0;
 }counter_t;
 
 typedef struct{
     float elapsed_time;
     float old_elapsed_time;
     float interval_time;
-    float start_time;
+    uint32_t start_time;
 }times_t;
 
 typedef struct{

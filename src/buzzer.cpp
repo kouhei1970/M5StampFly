@@ -30,10 +30,6 @@ void beep(void) {
 }
 
 void start_tone(void) {
-    buzzer_sound(NOTE_D6, 100);
-    buzzer_sound(NOTE_D5, 100);
-    buzzer_sound(NOTE_D7, 100);
-    buzzer_sound(NOTE_D3, 100);
     buzzer_sound(2000, 200);
     buzzer_sound(1000, 200);
 }

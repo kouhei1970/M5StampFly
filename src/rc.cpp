@@ -39,12 +39,12 @@ volatile uint16_t Connect_flag = 0;
 // 4C:75:25:AF:4E:84
 // 4C:75:25:AD:8B:20
 // 4C:75:25:AD:8B:20 赤水玉テープ　ATOM lite
-uint8_t TelemAddr[6] = {0};
-// uint8_t TelemAddr[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+uint8_t JoyAddr[6] = {0};
+uint8_t TelemAddr[6] = {0x4C, 0x75, 0x25, 0xAD, 0x8B, 0x20};
 volatile uint8_t MyMacAddr[6];
 volatile uint8_t peer_command[4] = {0xaa, 0x55, 0x16, 0x88};
 volatile uint8_t Rc_err_flag     = 0;
-esp_now_peer_info_t peerInfo;
+esp_now_peer_info_t peerInfo[2];
 
 // RC
 volatile float Stick[16];
@@ -60,14 +60,14 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *recv_data, int data_len)
     // int16_t d_short;
     float d_float;
 
-    if (!TelemAddr[0] && !TelemAddr[1] && !TelemAddr[2] && !TelemAddr[3] && !TelemAddr[4] && !TelemAddr[5]) {
-        memcpy(TelemAddr, mac_addr, 6);
-        memcpy(peerInfo.peer_addr, TelemAddr, 6);
-        peerInfo.channel = CHANNEL;
-        peerInfo.encrypt = false;
-        if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+    if (!JoyAddr[0] && !JoyAddr[1] && !JoyAddr[2] && !JoyAddr[3] && !JoyAddr[4] && !JoyAddr[5]) {
+        memcpy(JoyAddr, mac_addr, 6);
+        memcpy(peerInfo[JOY].peer_addr, JoyAddr, 6);
+        peerInfo[JOY].channel = CHANNEL;
+        peerInfo[JOY].encrypt = false;
+        if (esp_now_add_peer(&peerInfo[JOY]) != ESP_OK) {
             USBSerial.println("Failed to add peer2");
-            memset(TelemAddr, 0, 6);
+            memset(JoyAddr, 0, 6);
         } else {
             esp_now_register_send_cb(on_esp_now_sent);
         }
@@ -169,10 +169,10 @@ void rc_init(void) {
 
     // MACアドレスブロードキャスト
     uint8_t addr[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    memcpy(peerInfo.peer_addr, addr, 6);
-    peerInfo.channel = CHANNEL;
-    peerInfo.encrypt = false;
-    if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+    memcpy(peerInfo[JOY].peer_addr, addr, 6);
+    peerInfo[JOY].channel = CHANNEL;
+    peerInfo[JOY].encrypt = false;
+    if (esp_now_add_peer(&peerInfo[JOY]) != ESP_OK) {
         USBSerial.println("Failed to add peer");
         return;
     }
@@ -182,7 +182,7 @@ void rc_init(void) {
     for (uint16_t i = 0; i < 50; i++) {
         send_peer_info();
         delay(50);
-        USBSerial.printf("%d\n", i);
+        //USBSerial.printf("%d\n", i);
     }
 
     // ESP-NOW再初期化
@@ -195,6 +195,17 @@ void rc_init(void) {
         ESP.restart();
     }
 
+    //テレメトリーM5ATOMとペアリング
+    memcpy(peerInfo[TELEM].peer_addr, TelemAddr, 6);
+    peerInfo[TELEM].channel = CHANNEL;
+    peerInfo[TELEM].encrypt = false;
+    if (esp_now_add_peer(&peerInfo[TELEM]) != ESP_OK) 
+    {
+            USBSerial.println("Failed to telemetry add peer2");
+    }
+    else USBSerial.printf("Telemetry peering Sucess!\n\r");
+    
+
     // ESP-NOWコールバック登録
     esp_now_register_recv_cb(OnDataRecv);
     USBSerial.println("ESP-NOW Ready.");
@@ -205,10 +216,10 @@ void send_peer_info(void) {
     data[0] = CHANNEL;
     memcpy(&data[1], (uint8_t *)MyMacAddr, 6);
     memcpy(&data[1 + 6], (uint8_t *)peer_command, 4);
-    esp_now_send(peerInfo.peer_addr, data, 11);
+    esp_now_send(peerInfo[JOY].peer_addr, data, 11);
 }
 
-uint8_t telemetry_send(uint8_t *data, uint16_t datalen) {
+uint8_t telemetry_send(esp_now_peer_info_t* peerInfo, uint8_t *data, uint16_t datalen) {
     static uint32_t cnt       = 0;
     static uint8_t error_flag = 0;
     static uint8_t state      = 0;
@@ -216,7 +227,7 @@ uint8_t telemetry_send(uint8_t *data, uint16_t datalen) {
     esp_err_t result;
 
     if ((error_flag == 0) && (state == 0)) {
-        result = esp_now_send(peerInfo.peer_addr, data, datalen);
+        result = esp_now_send(peerInfo->peer_addr, data, datalen);
         cnt    = 0;
     } else
         cnt++;
