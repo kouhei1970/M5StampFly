@@ -34,7 +34,7 @@
 
 #define CHANNEL (3)
 #define JOY (0)
-#define TELEM (1)
+#define TELEM (0)
 
 #define RUDDER         (0)
 #define ELEVATOR       (1)
