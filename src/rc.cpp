@@ -143,9 +143,17 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *recv_data, int data_len)
 }
 
 // 送信コールバック
-uint8_t esp_now_send_status;
+esp_now_send_status_t esp_now_send_status;
 void on_esp_now_sent(const uint8_t *mac_addr, esp_now_send_status_t status) {
     esp_now_send_status = status;
+    #if 0
+    if (status == ESP_NOW_SEND_SUCCESS)
+        USBSerial.printf("MAC ADDRES %02X:%02X:%02X:%02X:%02X:%02X ESP_NOW_SEND_SUCCESS!\n\r", 
+            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+    else
+        USBSerial.printf("MAC ADDRES %02X:%02X:%02X:%02X:%02X:%02X ESP_NOW_SEND_FAIL!\n\r", 
+            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+    #endif
 }
 
 void rc_init(void) {
@@ -204,7 +212,7 @@ void rc_init(void) {
             USBSerial.println("Failed to telemetry add peer2");
     }
     else USBSerial.printf("Telemetry peering Sucess!\n\r");
-    
+    esp_now_register_send_cb(on_esp_now_sent);
 
     // ESP-NOWコールバック登録
     esp_now_register_recv_cb(OnDataRecv);
@@ -229,10 +237,11 @@ uint8_t telemetry_send(esp_now_peer_info_t* peerInfo, uint8_t *data, uint16_t da
     if ((error_flag == 0) && (state == 0)) {
         result = esp_now_send(peerInfo->peer_addr, data, datalen);
         cnt    = 0;
+        USBSerial.printf("%d\n\r", result);
     } else
         cnt++;
 
-    if (esp_now_send_status == 0) {
+    if (esp_now_send_status == ESP_NOW_SEND_FAIL) {
         error_flag = 0;
         // state = 0;
     } else {

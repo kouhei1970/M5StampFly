@@ -164,7 +164,7 @@ void sensor_read(sensor_value_t* data) {
     return;
 }
 
-void tof_read(sensor_value_t* data) {
+void bottom_tof_read(sensor_value_t* data) {
     uint16_t range; 
     if (ToF_bottom_data_ready_flag) {
         //dcnt = 0u;

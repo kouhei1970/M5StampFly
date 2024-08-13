@@ -45,8 +45,35 @@
 
 void IRAM_ATTR onTimer(void);
 void init_copter(void);
-void myclock(void);
+void update_loop400Hz(void);
+void init_mode(void);
+void average_mode(void);
+void flight_mode(void);
+void parking_mode(void);
 void loop_400Hz(void *pvParameters);
+
+// Main loop
+void loop_400Hz(void) {
+    // 400Hzで以降のコードが実行
+
+    update_loop400Hz();
+    
+    // Mode select
+    if (StampFly.flag.mode == INIT_MODE) 
+        init_mode();
+    else if (StampFly.flag.mode == AVERAGE_MODE)
+        average_mode();
+    else if (StampFly.flag.mode == FLIGHT_MODE)
+        flight_mode();
+    else if (StampFly.flag.mode == PARKING_MODE)
+        parking_mode();
+
+    //// Telemetry
+    telemetry();
+    StampFly.flag.oldmode = StampFly.flag.mode;  // Memory now mode
+    
+    // End of Loop_400Hz function    
+}
 
 // 割り込み関数
 // Intrupt function
@@ -87,63 +114,60 @@ void init_copter(void) {
 
 }
 
-//時計
-void myclock(void) {
+//loop400Hzの更新関数
+void update_loop400Hz(void) {
     uint32_t now_time;
 
-    now_time = micros();
-    StampFly.times.old_elapsed_time = StampFly.times.elapsed_time;
-    StampFly.times.elapsed_time = 1e-6 * (now_time - StampFly.times.start_time);
-    StampFly.times.interval_time = StampFly.times.elapsed_time - StampFly.times.old_elapsed_time;
-    #if 1
+    while (StampFly.flag.loop == 0);
+    StampFly.flag.loop = 0;
+
+    #if 0
     USBSerial.printf("%9.4f %9.4f %04d\n\r", 
         StampFly.times.elapsed_time, 
         StampFly.times.interval_time,
         StampFly.sensor.bottom_tof_range);
     #endif
-}
 
-
-// Main loop
-void loop_400Hz(void) {
-    // 割り込みにより400Hzで以降のコードが実行
-    while (StampFly.flag.loop == 0);
-    StampFly.flag.loop = 0;
-
-    //clock
-    myclock();
+    //Clock
+    now_time = micros();
+    StampFly.times.old_elapsed_time = StampFly.times.elapsed_time;
+    StampFly.times.elapsed_time = 1e-6 * (now_time - StampFly.times.start_time);
+    StampFly.times.interval_time = StampFly.times.elapsed_time - StampFly.times.old_elapsed_time;
+    
     // Read Sensor Value
     sensor_read(&StampFly.sensor);
+    
     // LED Drive
     led_drive();
+}
 
-    // Begin Mode select
-    if (StampFly.flag.mode == INIT_MODE) {
-        motor_stop();
-        StampFly.counter.offset = 0;
-        StampFly.flag.mode = AVERAGE_MODE;
-        return;
+void init_mode(void) {
+    motor_stop();
+    StampFly.counter.offset = 0;
+    //Mode change
+    StampFly.flag.mode = AVERAGE_MODE;
+    return;
 
-    } else if (StampFly.flag.mode == AVERAGE_MODE) {
-        // Gyro offset Estimate
-        if (StampFly.counter.offset < AVERAGENUM) {
-            sensor_calc_offset_avarage();
-            StampFly.counter.offset++;
-            return;
-        }
-        // Mode change
-        StampFly.flag.mode   = PARKING_MODE;
-        StampFly.times.start_time = micros();
-        StampFly.times.old_elapsed_time = 0.0f;
+}
+
+void average_mode(void) {
+    // Gyro offset Estimate 角速度のオフセットを取得
+    if (StampFly.counter.offset < AVERAGENUM) {
+        sensor_calc_offset_avarage();
+        StampFly.counter.offset++;
         return;
-    } else if (StampFly.flag.mode == PARKING_MODE) {
-        //ここに自分のコードを書く
-        
     }
+    // Mode change
+    StampFly.flag.mode   = PARKING_MODE;
+    StampFly.times.start_time = micros();
+    StampFly.times.old_elapsed_time = 0.0f;
+    return;
+}
 
-    //// Telemetry
-    telemetry();
-    StampFly.flag.oldmode = StampFly.flag.mode;  // Memory now mode
-    // End of Loop_400Hz function
-    
+void flight_mode(void) {
+    //飛行するためのコードを以下に記述する
+}
+
+void parking_mode(void) {
+    //着陸している時に行う処理を記述する
 }
