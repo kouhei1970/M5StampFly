@@ -45,6 +45,9 @@ volatile uint8_t MyMacAddr[6];
 volatile uint8_t peer_command[4] = {0xaa, 0x55, 0x16, 0x88};
 volatile uint8_t Rc_err_flag     = 0;
 esp_now_peer_info_t peerInfo[2];
+esp_now_send_status_t esp_now_send_status;
+volatile uint8_t SendAddress[6];
+
 
 // RC
 volatile float Stick[16];
@@ -62,7 +65,7 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *recv_data, int data_len)
 
     if (!JoyAddr[0] && !JoyAddr[1] && !JoyAddr[2] && !JoyAddr[3] && !JoyAddr[4] && !JoyAddr[5]) {
         memcpy(JoyAddr, mac_addr, 6);
-        memcpy(peerInfo[JOY].peer_addr, JoyAddr, 6);
+        memcpy((void*)peerInfo[JOY].peer_addr, JoyAddr, 6);
         peerInfo[JOY].channel = CHANNEL;
         peerInfo[JOY].encrypt = false;
         if (esp_now_add_peer(&peerInfo[JOY]) != ESP_OK) {
@@ -128,7 +131,7 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *recv_data, int data_len)
     Stick[LOG] = 0.0;
     // if (check_sum!=recv_data[23])USBSerial.printf("checksum=%03d recv_sum=%03d\n\r", check_sum, recv_data[23]);
 
-#if 0
+#if 1
   USBSerial.printf("%6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f  %6.3f\n\r", 
                                             Stick[THROTTLE],
                                             Stick[AILERON],
@@ -143,9 +146,9 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *recv_data, int data_len)
 }
 
 // 送信コールバック
-esp_now_send_status_t esp_now_send_status;
 void on_esp_now_sent(const uint8_t *mac_addr, esp_now_send_status_t status) {
     esp_now_send_status = status;
+    memcpy((void*)SendAddress, mac_addr, 6);
     #if 0
     if (status == ESP_NOW_SEND_SUCCESS)
         USBSerial.printf("MAC ADDRES %02X:%02X:%02X:%02X:%02X:%02X ESP_NOW_SEND_SUCCESS!\n\r", 
@@ -177,7 +180,7 @@ void rc_init(void) {
 
     // MACアドレスブロードキャスト
     uint8_t addr[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    memcpy(peerInfo[JOY].peer_addr, addr, 6);
+    memcpy((void*)peerInfo[JOY].peer_addr, addr, 6);
     peerInfo[JOY].channel = CHANNEL;
     peerInfo[JOY].encrypt = false;
     if (esp_now_add_peer(&peerInfo[JOY]) != ESP_OK) {
@@ -204,7 +207,7 @@ void rc_init(void) {
     }
 
     //テレメトリーM5ATOMとペアリング
-    memcpy(peerInfo[TELEM].peer_addr, TelemAddr, 6);
+    memcpy((void*)peerInfo[TELEM].peer_addr, TelemAddr, 6);
     peerInfo[TELEM].channel = CHANNEL;
     peerInfo[TELEM].encrypt = false;
     if (esp_now_add_peer(&peerInfo[TELEM]) != ESP_OK) 
@@ -237,11 +240,11 @@ uint8_t telemetry_send(esp_now_peer_info_t* peerInfo, uint8_t *data, uint16_t da
     if ((error_flag == 0) && (state == 0)) {
         result = esp_now_send(peerInfo->peer_addr, data, datalen);
         cnt    = 0;
-        USBSerial.printf("%d\n\r", result);
+        //USBSerial.printf("%d\n\r", result);
     } else
         cnt++;
 
-    if (esp_now_send_status == ESP_NOW_SEND_FAIL) {
+    if (esp_now_send_status == ESP_NOW_SEND_SUCCESS) {
         error_flag = 0;
         // state = 0;
     } else {
@@ -254,7 +257,7 @@ uint8_t telemetry_send(esp_now_peer_info_t* peerInfo, uint8_t *data, uint16_t da
         cnt        = 0;
     }
     cnt++;
-    // USBSerial.printf("%6d %d %d\r\n", cnt, error_flag, esp_now_send_status);
+    //USBSerial.printf("%6d %d %d\r\n", cnt, error_flag, esp_now_send_status);
 
     return error_flag;
 }

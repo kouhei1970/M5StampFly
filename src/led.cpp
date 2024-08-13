@@ -51,7 +51,7 @@ void led_init(void) {
 }
 
 void led_show(void) {
-    uint8_t bright = 64;
+    uint8_t bright = 32;
     FastLED.show(bright);
 }
 
