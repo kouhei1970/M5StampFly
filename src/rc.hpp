@@ -32,6 +32,7 @@
 // #define MINIJOYC
 
 #define CHANNEL 3
+#define BTID 
 
 #define RUDDER         0
 #define ELEVATOR       1

@@ -23,36 +23,40 @@
  * SOFTWARE.
  */
 
+#include <Ps3Controller.h>
 #include "rc.hpp"
-#include <WiFi.h>
-#include <esp_now.h>
-#include <esp_wifi.h>
+//#include <WiFi.h>
+//#include <esp_now.h>
+//#include <esp_wifi.h>
 #include "flight_control.hpp"
 
 // esp_now_peer_info_t slave;
 
 volatile uint16_t Connect_flag = 0;
 
+#if 1
 // Telemetry相手のMAC ADDRESS 4C:75:25:AD:B6:6C
 // ATOM Lite (C): 4C:75:25:AE:27:FC
 // 4C:75:25:AD:8B:20
 // 4C:75:25:AF:4E:84
 // 4C:75:25:AD:8B:20
 // 4C:75:25:AD:8B:20 赤水玉テープ　ATOM lite
-uint8_t TelemAddr[6] = {0};
+//uint8_t TelemAddr[6] = {0};
 // uint8_t TelemAddr[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-volatile uint8_t MyMacAddr[6];
-volatile uint8_t peer_command[4] = {0xaa, 0x55, 0x16, 0x88};
+//volatile uint8_t MyMacAddr[6];
+//volatile uint8_t peer_command[4] = {0xaa, 0x55, 0x16, 0x88};
 volatile uint8_t Rc_err_flag     = 0;
-esp_now_peer_info_t peerInfo;
+//esp_now_peer_info_t peerInfo;
+#endif
 
 // RC
 volatile float Stick[16];
-volatile uint8_t Recv_MAC[3];
+//volatile uint8_t Recv_MAC[3];
 
-void on_esp_now_sent(const uint8_t *mac_addr, esp_now_send_status_t status);
+//void on_esp_now_sent(const uint8_t *mac_addr, esp_now_send_status_t status);
 
 // 受信コールバック
+#if 0
 void OnDataRecv(const uint8_t *mac_addr, const uint8_t *recv_data, int data_len) {
     Connect_flag = 0;
 
@@ -141,7 +145,9 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *recv_data, int data_len)
                                             Stick[LOG]);
 #endif
 }
+#endif
 
+#if 0
 // 送信コールバック
 uint8_t esp_now_send_status;
 void on_esp_now_sent(const uint8_t *mac_addr, esp_now_send_status_t status) {
@@ -207,12 +213,14 @@ void send_peer_info(void) {
     memcpy(&data[1 + 6], (uint8_t *)peer_command, 4);
     esp_now_send(peerInfo.peer_addr, data, 11);
 }
+#endif
 
 uint8_t telemetry_send(uint8_t *data, uint16_t datalen) {
+
     static uint32_t cnt       = 0;
     static uint8_t error_flag = 0;
     static uint8_t state      = 0;
-
+#if 0
     esp_err_t result;
 
     if ((error_flag == 0) && (state == 0)) {
@@ -235,8 +243,9 @@ uint8_t telemetry_send(uint8_t *data, uint16_t datalen) {
     }
     cnt++;
     // USBSerial.printf("%6d %d %d\r\n", cnt, error_flag, esp_now_send_status);
-
+#endif
     return error_flag;
+
 }
 
 void rc_end(void) {
@@ -244,7 +253,7 @@ void rc_end(void) {
 }
 
 uint8_t rc_isconnected(void) {
-    bool status;
+    bool status=1;
     Connect_flag++;
     if (Connect_flag < 40)
         status = 1;
@@ -254,5 +263,119 @@ uint8_t rc_isconnected(void) {
     return status;
 }
 
-void rc_demo() {
+void OnDataRecv(void)
+{
+    Connect_flag = 0;
+    #if 0
+    //--- Digital cross/square/triangle/circle button events ---
+    if( Ps3.event.button_down.circle )
+    {
+        //Serial.println("Started pressing the circle button");
+        Chdata[LOG] = 1;
+    }
+    if( Ps3.event.button_up.circle )
+    {
+        //Serial.println("Released the circle button");
+    }
+    if( Ps3.event.button_down.cross )
+    {
+        //Serial.println("Started pressing the cross button");
+        Chdata[LOG] = 0;
+    }
+    if( Ps3.event.button_up.cross )
+    {
+        //Serial.println("Released the cross button");
+    }
+
+    //---------- Digital select/start/ps button events ---------
+    if( Ps3.event.button_down.select )
+        Serial.println("Started pressing the select button");
+    if( Ps3.event.button_up.select )
+        Serial.println("Released the select button");
+
+    if( Ps3.event.button_down.start )
+        Serial.println("Started pressing the start button");
+    if( Ps3.event.button_up.start )
+        Serial.println("Released the start button");
+
+    if( Ps3.event.button_down.ps )
+        Serial.println("Started pressing the Playstation button");
+    if( Ps3.event.button_up.ps )
+        Serial.println("Released the Playstation button");
+
+
+    //---------------- Analog stick value events ---------------
+   if( abs(Ps3.event.analog_changed.stick.lx) + abs(Ps3.event.analog_changed.stick.ly) > 2 ){
+       //Serial.print("Moved the left stick:");
+       //Serial.print(" x="); Serial.print(Ps3.data.analog.stick.lx, DEC);
+       //Serial.print(" y="); Serial.print(Ps3.data.analog.stick.ly, DEC);
+       //Serial.println();
+
+    }
+
+   if( abs(Ps3.event.analog_changed.stick.rx) + abs(Ps3.event.analog_changed.stick.ry) > 2 ){
+       //Serial.print("Moved the right stick:");
+       //Serial.print(" x="); Serial.print(Ps3.data.analog.stick.rx, DEC);
+       //Serial.print(" y="); Serial.print(Ps3.data.analog.stick.ry, DEC);
+       //Serial.println();
+   }
+
+   //---------------------- Battery events ---------------------
+    if( battery != Ps3.data.status.battery ){
+        battery = Ps3.data.status.battery;
+        Serial.print("The controller battery is ");
+        if( battery == ps3_status_battery_charging )      Serial.println("charging");
+        else if( battery == ps3_status_battery_full )     Serial.println("FULL");
+        else if( battery == ps3_status_battery_high )     Serial.println("HIGH");
+        else if( battery == ps3_status_battery_low)       Serial.println("LOW");
+        else if( battery == ps3_status_battery_dying )    Serial.println("DYING");
+        else if( battery == ps3_status_battery_shutdown ) Serial.println("SHUTDOWN");
+        else Serial.println("UNDEFINED");
+    }
+    #endif
+
+    Stick[THROTTLE] = -Ps3.data.analog.stick.ry;
+    Stick[RUDDER]   =  -Ps3.data.analog.stick.rx;
+    Stick[ELEVATOR] =   Ps3.data.analog.stick.ly;
+    Stick[AILERON]  =   Ps3.data.analog.stick.lx;
+
+
+    USBSerial.printf("%4d %4d %4d %4d \n\r",
+        Stick[THROTTLE], Stick[RUDDER], Stick[ELEVATOR], Stick[AILERON]);
+
 }
+
+void onConnect(){
+    USBSerial.println("Connected.");
+}
+
+void rc_init()
+{
+    Ps3.begin();
+    String address = Ps3.getAddress();
+    Serial.print("The ESP32's Bluetooth MAC address is: ");
+    Serial.println(address);
+    Ps3.end();
+
+    Ps3.begin(address.c_str());
+    Ps3.attach(OnDataRecv);
+    Ps3.attachOnConnect(onConnect);
+    Serial.println("Dualshock3 Ready! ");
+}
+
+#if 0
+void rc_demo()
+{
+    if(!Ps3.isConnected())
+        return;
+
+    //-------------------- Player LEDs -------------------
+    Serial.print("Setting LEDs to player "); Serial.println(player, DEC);
+    Ps3.setPlayer(player);
+
+    player += 1;
+    if(player > 10) player = 0;
+
+    delay(2000);
+}
+#endif
