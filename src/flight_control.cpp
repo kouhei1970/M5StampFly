@@ -305,7 +305,7 @@ void loop_400Hz(void) {
     uint32_t cs_time = micros();
 
     //RC Update
-    csrfloop();
+    rc_loop();
 
     // LED Drive
     led_drive();
@@ -669,7 +669,7 @@ void get_command(void)
     else Thrust0 = get_trim_duty(Voltage);
     
     //Get Altitude ref
-    if ( (-0.2 < thlo) && (thlo < 0.2) )thlo = 0.0f ;//不感帯
+    //if ( (-0.2 < thlo) && (thlo < 0.2) )thlo = 0.0f ;//不感帯
     Alt_ref = Alt_ref + thlo*0.001;
     if(Alt_ref > ALT_REF_MAX ) Alt_ref = ALT_REF_MAX;
     if(Alt_ref < ALT_REF_MIN ) Alt_ref = ALT_REF_MIN;
@@ -678,6 +678,7 @@ void get_command(void)
       Thrust0 = Thrust0 - 0.02;
       OladRange0flag =Range0flag;
     }
+    //USBSerial.printf("%f %f\n\r", thlo, Alt_ref);
     Thrust_command = Thrust0 * BATTERY_VOLTAGE;    
   } 
 
